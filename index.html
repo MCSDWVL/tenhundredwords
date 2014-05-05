@@ -1,0 +1,242 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>simple words</title>
+
+  <link href="css/main.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<textarea name="input" class="inputtextbox" id="inputtextbox"></textarea>
+	<br />
+	<div class="output" id="outputdiv"></div>
+	<br />
+	<br />
+	<br />
+	<div class="addwords" id="addwordsdiv"></div>
+	<br />
+	<div class="thousandwords" id="thousandwords"></div>
+
+	<!-- <script src="js/long_dict.js"></script> -->
+	<!-- <script src="js/dictionary.js"></script> -->
+	<script src="js/local_storage_manager.js"></script>
+	<script src="js/wordList.min.js"></script>
+	<script src="js/wordBank.min.js"></script>
+	<script src="js/thousandwords.js"></script>
+	<script type="text/javascript">
+		window.translations = {};
+		window.LocalStorage = new LocalStorageManager();
+		document.getElementById('inputtextbox').addEventListener('input', function (e) { inputchanged(document.getElementById('inputtextbox'), document.getElementById('outputdiv'), document.getElementById('addwordsdiv')); }, false);
+
+		var allwordsdiv = document.getElementById('thousandwords');
+		var lastFirstLetter = '';
+		for (var i = 0; i < ThousandWords.length; ++i)
+		{
+			if (lastFirstLetter != ThousandWords[i][0])
+			{
+				allwordsdiv.innerHTML += "<br/><br/>";
+				lastFirstLetter = ThousandWords[i][0];
+			}
+			allwordsdiv.innerHTML += ThousandWords[i] + ", ";
+		}
+
+		function RefreshAllOutput()
+		{
+			inputchanged(document.getElementById('inputtextbox'), document.getElementById('outputdiv'), document.getElementById('addwordsdiv'));
+		}
+
+		function GetTranslation(complexword)
+		{
+			var fromMemory = translations[complexword];
+			if (fromMemory)
+				return fromMemory;
+			else
+			{
+				var fromLocalStore = LocalStorage.storage.getItem(complexword);
+				if (fromLocalStore)
+				{
+					translations[complexword] = fromLocalStore;
+					return fromLocalStore;
+				}
+			}
+
+			return null;
+		}
+
+		function SetTranslation(complexword, simplewords)
+		{
+			var splitWords = simplewords.split(" ");
+			if (!splitWords || splitWords.length <= 0)
+				return false;
+
+			for (var i = 0; i < splitWords.length; ++i)
+			{
+				if (!SimpleWord(splitWords[i]))
+					return false;
+			}
+
+			window.translations[complexword] = simplewords;
+			LocalStorage.storage.setItem(complexword, simplewords);
+			return true;
+		}
+
+		function ValidWord(word)
+		{
+			var lower = word.toLowerCase();
+			return lower == "i" || lower == "a" || Word_List.isInList(lower); //checkDictionary(splitWords[i]);
+		}
+
+		function SimpleWord(word)
+		{
+			var lower = word.toLowerCase();
+			if (ThousandWords.indexOf(lower) > -1)
+				return true;
+
+			// plural or conjugate to end in s or es?
+			var cleanString = lower.replace(/s\b/g, "");
+			if (ThousandWords.indexOf(cleanString) > -1)
+				return true;
+			cleanString = cleanString.replace(/e\b/g, "");
+			if (ThousandWords.indexOf(cleanString) > -1)
+				return true;
+
+			// pluralized to ies
+			var cleanString = lower.replace(/ies\b/g, "y");
+			if (ThousandWords.indexOf(cleanString) > -1)
+				return true;
+
+			// adverbed up to y or ey?
+			cleanString = lower.replace(/y\b/g, "");
+			if (ThousandWords.indexOf(cleanString) > -1)
+				return true;
+			cleanString = cleanString + "e";
+			if (ThousandWords.indexOf(cleanString) > -1)
+				return true;
+
+			// verbified to end in er?
+			cleanString = lower.replace(/er\b/g, "");
+			if (ThousandWords.indexOf(cleanString) > -1)
+				return true;
+
+			// verbified to end in ed?
+			cleanString = lower.replace(/ed\b/g, "");
+			if (ThousandWords.indexOf(cleanString) > -1)
+				return true;
+
+			// verbified to end in ing?
+			cleanString = lower.replace(/ing\b/g, "");
+			if (ThousandWords.indexOf(cleanString) > -1)
+				return true;
+			
+			return false;
+		}
+
+		function addoutputwordstocontainer(outputwords, outputDiv, formDiv)
+		{
+			for (var i = 0; i < outputwords.length; ++i)
+			{
+				if (outputwords[i] && outputwords[i].length > 0)
+				{
+					var current = outputwords[i];
+					var inner = document.createElement("a");
+					var validWord = ValidWord(current);
+
+					// mark the class as invalid or not simple
+					if (!validWord)
+					{
+						inner.classList.add("badword");
+						inner.innerHTML += current;
+					}
+					else
+					{
+						// MCSDWVL THIS IS NAIVE DO BETTER GUY
+						var isSimple = SimpleWord(current);
+						if (!isSimple)
+						{
+							inner.classList.add("complexword");
+
+							// show translation instead!?
+							var translation = GetTranslation(current);
+							if (translation)
+							{
+								// recursively add the translated words (what if a words translation contains a loop!?  Translations should only have simple words!)
+								var splitTranslation = translation.split(" ");
+								addoutputwordstocontainer(splitTranslation, outputDiv, formDiv);
+							}
+							else
+							{
+								inner.innerHTML += current;
+							}
+
+							if (formDiv)
+								AddTranslationForm(formDiv, current, translation);
+						}
+						else
+							inner.innerHTML += current;
+					}
+
+					// add it to the output!
+					inner.innerHTML += " ";
+					outputDiv.appendChild(inner);
+				}
+			}
+		}
+
+		function inputchanged(inputbox, outputDiv, formDiv, translatingword)
+		{
+			// clear output div
+			while(outputDiv.lastChild)
+				outputDiv.removeChild(outputDiv.lastChild);
+
+			// clear translation forms
+			if (formDiv)
+				while (formDiv.lastChild)
+					formDiv.removeChild(formDiv.lastChild);
+
+			var splitWords = inputbox.value.split(" ");
+			addoutputwordstocontainer(splitWords, outputDiv, formDiv);
+		}
+
+		function AddTranslationForm(outputDiv, complexword, translation)
+		{
+			var inner = document.createElement("div");
+			
+			// the output area
+			var ouputElem = document.createElement("div");
+			ouputElem.classList.add("output");
+
+			// the sub forms area
+			var formsElem = document.createElement("div");
+			formsElem.classList.add("addwords");
+
+			// the input box
+			var input = document.createElement("textarea");
+			input.classList.add("inputtextbox");
+			input.addEventListener('input', function (e) { inputchanged(input, ouputElem, formsElem, complexword); }, false);
+			input.value = translation;
+
+			// the update button
+			var updateButton = document.createElement("BUTTON");
+			var txt = document.createTextNode("Update " + complexword + " translation");
+			updateButton.appendChild(txt);
+			updateButton.addEventListener('click', function (e) { var accepted = SetTranslation(complexword, input.value); if (accepted) RefreshAllOutput(); }, false);
+
+			// trigger initial
+			inputchanged(input, ouputElem, formsElem, complexword);
+
+			inner.appendChild(document.createTextNode("Translation for word: " + complexword));
+			inner.appendChild(document.createElement("br"));
+			inner.appendChild(input);
+			inner.appendChild(document.createElement("br"));
+			inner.appendChild(updateButton);
+			inner.appendChild(document.createElement("br"));
+			inner.appendChild(ouputElem);
+			inner.appendChild(document.createElement("br"));
+			inner.appendChild(formsElem);
+			inner.appendChild(document.createElement("br"));
+
+			outputDiv.appendChild(inner);
+			outputDiv.appendChild(document.createElement("br"));
+		}
+
+	</script>
+</body>

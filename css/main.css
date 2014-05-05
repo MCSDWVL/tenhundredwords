@@ -1,0 +1,26 @@
+body 
+{
+	min-width: 357px;
+	font-family: Arial;
+}
+      
+input
+{
+	font-family: Arial;
+}
+
+div
+{
+	float:left;
+	margin-left: 5px;
+}    
+   
+.badword
+{
+	color: Red;
+}
+
+.complexword
+{
+	color: Green;
+}
