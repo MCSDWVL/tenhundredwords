@@ -32,6 +32,7 @@
 
 		var allwordsdiv = document.getElementById('thousandwords');
 		var lastFirstLetter = '';
+		var specialAcceptedWords = [];
 		for (var i = 0; i < ThousandWords.length; ++i)
 		{
 			ThousandWords[i] = ThousandWords[i].toLowerCase();
@@ -41,6 +42,9 @@
 				lastFirstLetter = ThousandWords[i][0];
 			}
 			allwordsdiv.innerHTML += ThousandWords[i] + ", ";
+
+			if (!ValidWord(ThousandWords[i]))
+				specialAcceptedWords.push(ThousandWords[i]);
 		}
 
 		function RefreshAreaOutput(parentObj)
@@ -141,35 +145,36 @@
 		function ValidWord(word)
 		{
 			var lower = GetCleanLowerWord(word);
-			return lower == "i" || lower == "a" || Word_List.isInList(lower); //checkDictionary(splitWords[i]);
+			return lower == "i" || lower == "a" || Word_List.isInList(lower) || specialAcceptedWords.indexOf(lower) > -1; //checkDictionary(splitWords[i]);
 		}
 
 		function TranslateAndPreserveSuffix(word)
 		{
-			var ret = { simplified: "", addLetters: "", foundTranslation:false };
+			if (!word || word.length == 0)
+				return null;
 			var lower = GetCleanLowerWord(word);
 			if (ThousandWords.indexOf(lower) > -1)
 			{
-				ret.foundTranslation = true;
-				ret.simplified = lower;
-				return ret;
+				return lower;
 			}
 
-			var endingsToTry = ["", "s", "es", "ies+y", "y", "y+e", "ness", "er", "ed", "ing", "d", "ed"];
+			var endingsToTry = ["", "s", "es", "ies+y", "y", "ly", "y+e", "ness", "er", "ed", "ing", "d", "ed"];
 			for(var i = 0; i < endingsToTry.length; ++i)
 			{
 				var parts = endingsToTry[i].split("+");
 				var re = new RegExp(parts[0] + "\\b", "g");
+				if (!lower.match(re))
+					continue;
 				var cleanString = lower.replace(re, "");
-				console.log("testing " + cleanString + " " + parts[0]);
 				if(parts[1])
 					cleanString += parts[1];
-				if(ThousandWords.indexOf(cleanString) > -1)
+				if (ThousandWords.indexOf(cleanString) > -1)
+				{
 					return word;
+				}
 				var trans = GetTranslation(cleanString);
 				if (trans)
 				{
-					console.log(cleanString + " " + trans + " " + parts[0]);
 					return trans + parts[0];
 				}
 			}
