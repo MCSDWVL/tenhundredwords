@@ -15,6 +15,7 @@
 	<div class="addwords" id="addwordsdiv"></div>
 	<br />
 	<div class="thousandwords" id="thousandwords"></div>
+	<button onclick="LocalStorage.storage.clear()">Clear</button>
 
 	<!-- <script src="js/long_dict.js"></script> -->
 	<!-- <script src="js/dictionary.js"></script> -->
@@ -62,6 +63,11 @@
 			return null;
 		}
 
+		function ForgetTranslation(complexword)
+		{
+			LocalStorage.storage.removeItem(complexword);
+		}
+
 		function SetTranslation(complexword, simplewords)
 		{
 			var splitWords = simplewords.split(" ");
@@ -70,8 +76,28 @@
 
 			for (var i = 0; i < splitWords.length; ++i)
 			{
+				alert("doing " + splitWords[i]);
 				if (!SimpleWord(splitWords[i]))
-					return false;
+				{
+					alert(splitWords[i] + " not simple");
+					// check for a translation
+					// add translated words into the split words here
+					// if we get back to the original complex word, abort!
+					if (splitWords[i] == complexword)
+					{
+						alert("cycle detected; translation refused");
+						return false;
+					}
+					var translation = GetTranslation(splitWords[i]);
+					if (translation)
+					{
+						alert("translating!");
+						splitWords = splitWords.slice(0, i).concat(translation.split(" ")).concat(splitWords.slice(i+1));
+
+						// repeat position we just spliced into
+						--i;
+					}
+				}
 			}
 
 			window.translations[complexword] = simplewords;
@@ -104,11 +130,16 @@
 			if (ThousandWords.indexOf(cleanString) > -1)
 				return true;
 
-			// adverbed up to y or ey?
+			// adjectived up to y or ey?
 			cleanString = lower.replace(/y\b/g, "");
 			if (ThousandWords.indexOf(cleanString) > -1)
 				return true;
 			cleanString = cleanString + "e";
+			if (ThousandWords.indexOf(cleanString) > -1)
+				return true;
+
+			// adjectived up to ness?
+			cleanString = lower.replace(/ness\b/g, "");
 			if (ThousandWords.indexOf(cleanString) > -1)
 				return true;
 
@@ -130,6 +161,14 @@
 			return false;
 		}
 
+		function CreateTranslationEventListener(formDiv, word, translation)
+		{
+			return function (e)
+			{
+				AddTranslationForm(formDiv, word, translation);
+			}
+		}
+
 		function addoutputwordstocontainer(outputwords, outputDiv, formDiv)
 		{
 			for (var i = 0; i < outputwords.length; ++i)
@@ -137,7 +176,7 @@
 				if (outputwords[i] && outputwords[i].length > 0)
 				{
 					var current = outputwords[i];
-					var inner = document.createElement("a");
+					var inner = document.createElement("span");
 					var validWord = ValidWord(current);
 
 					// mark the class as invalid or not simple
@@ -152,23 +191,28 @@
 						var isSimple = SimpleWord(current);
 						if (!isSimple)
 						{
-							inner.classList.add("complexword");
-
 							// show translation instead!?
 							var translation = GetTranslation(current);
 							if (translation)
 							{
 								// recursively add the translated words (what if a words translation contains a loop!?  Translations should only have simple words!)
 								var splitTranslation = translation.split(" ");
-								addoutputwordstocontainer(splitTranslation, outputDiv, formDiv);
+								var translationGroup = document.createElement("span");
+								translationGroup.classList.add("translatedgroup");
+								translationGroup.setAttribute("translated", current);
+								inner.appendChild(translationGroup);
+								addoutputwordstocontainer(splitTranslation, translationGroup, formDiv);
 							}
 							else
 							{
+								inner.classList.add("complexword");
 								inner.innerHTML += current;
 							}
 
-							if (formDiv)
-								AddTranslationForm(formDiv, current, translation);
+							inner.addEventListener('click', CreateTranslationEventListener(formDiv, current, translation), false);
+
+							//if (formDiv)
+							//	AddTranslationForm(formDiv, current, translation);
 						}
 						else
 							inner.innerHTML += current;
@@ -183,6 +227,8 @@
 
 		function inputchanged(inputbox, outputDiv, formDiv, translatingword)
 		{
+			if (GetTranslation(translatingword))
+				ForgetTranslation(translatingword);
 			// clear output div
 			while(outputDiv.lastChild)
 				outputDiv.removeChild(outputDiv.lastChild);
@@ -198,6 +244,9 @@
 
 		function AddTranslationForm(outputDiv, complexword, translation)
 		{
+			while (outputDiv.lastChild)
+				outputDiv.removeChild(outputDiv.lastChild);
+
 			var inner = document.createElement("div");
 			
 			// the output area

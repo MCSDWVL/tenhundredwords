@@ -23,4 +23,17 @@ div
 .complexword
 {
 	color: Green;
+	text-decoration: underline;
+}
+
+.translatedgroup
+{
+	color: Orange;
+	text-decoration: underline;
+}
+
+.translatedgroup.complexword
+{
+	color:Lime;
+	text-decoration: underline;
 }
