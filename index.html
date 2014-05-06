@@ -51,19 +51,47 @@
 				inputchanged(document.getElementById('inputtextbox'), document.getElementById('outputdiv'), document.getElementById('addwordsdiv'));
 		}
 
+		function GetCleanLowerWord(complexword)
+		{
+			if (complexword && complexword.length > 0)
+				return complexword.toLowerCase().replace(/[\.,-\/#!$%\?\^&\*;:{}=\-_`~()]/g, "");
+			else
+				return complexword;
+		}
+
 		function GetTranslation(complexword)
 		{
-			var fromMemory = translations[complexword];
-			if (fromMemory)
-				return fromMemory;
-			else
+			if (!complexword)
+				return complexword;
+
+			var original = complexword;
+			complexword = GetCleanLowerWord(complexword);
+
+			var translation = null;
+
+			// is it already simple?
+			if (ThousandWords.indexOf(complexword) > -1)
+				translation = cleanString;
+
+			// do we already know the translation in memory?
+			if(!translation)
+				translation = translations[complexword];
+
+			// do we have the translation in local storage?
+			if (!translation)
 			{
-				var fromLocalStore = LocalStorage.storage.getItem(complexword);
-				if (fromLocalStore)
+				translation = LocalStorage.storage.getItem(complexword);
+				if (translation)
 				{
-					translations[complexword] = fromLocalStore;
-					return fromLocalStore;
+					translations[complexword] = translation;
 				}
+			}
+
+			// found the translation!  hooray!
+			if (translation)
+			{
+				// try to preserve ending marks that didn't count in translation
+				return original.toLowerCase().replace(complexword, translation);
 			}
 
 			return null;
@@ -71,11 +99,13 @@
 
 		function ForgetTranslation(complexword)
 		{
+			complexword = GetCleanLowerWord(complexword);
 			LocalStorage.storage.removeItem(complexword);
 		}
 
 		function SetTranslation(complexword, simplewords)
 		{
+			complexword = GetCleanLowerWord(complexword);
 			var splitWords = simplewords.split(" ");
 			if (!splitWords || splitWords.length <= 0)
 				return false;
@@ -110,13 +140,46 @@
 
 		function ValidWord(word)
 		{
-			var lower = word.toLowerCase();
+			var lower = GetCleanLowerWord(word);
 			return lower == "i" || lower == "a" || Word_List.isInList(lower); //checkDictionary(splitWords[i]);
+		}
+
+		function TranslateAndPreserveSuffix(word)
+		{
+			var ret = { simplified: "", addLetters: "", foundTranslation:false };
+			var lower = GetCleanLowerWord(word);
+			if (ThousandWords.indexOf(lower) > -1)
+			{
+				ret.foundTranslation = true;
+				ret.simplified = lower;
+				return ret;
+			}
+
+			var endingsToTry = ["", "s", "es", "ies+y", "y", "y+e", "ness", "er", "ed", "ing", "d", "ed"];
+			for(var i = 0; i < endingsToTry.length; ++i)
+			{
+				var parts = endingsToTry[i].split("+");
+				var re = new RegExp(parts[0] + "\\b", "g");
+				var cleanString = lower.replace(re, "");
+				console.log("testing " + cleanString + " " + parts[0]);
+				if(parts[1])
+					cleanString += parts[1];
+				if(ThousandWords.indexOf(cleanString) > -1)
+					return word;
+				var trans = GetTranslation(cleanString);
+				if (trans)
+				{
+					console.log(cleanString + " " + trans + " " + parts[0]);
+					return trans + parts[0];
+				}
+			}
+
+			return null;
 		}
 
 		function SimpleWord(word)
 		{
-			var lower = word.toLowerCase();
+			var lower = GetCleanLowerWord(word);
 			if (ThousandWords.indexOf(lower) > -1)
 				return true;
 
@@ -203,7 +266,7 @@
 						if (!isSimple)
 						{
 							// show translation instead!?
-							var translation = GetTranslation(current);
+							var translation = TranslateAndPreserveSuffix(current);
 							if (translation)
 							{
 								// recursively add the translated words (what if a words translation contains a loop!?  Translations should only have simple words!)

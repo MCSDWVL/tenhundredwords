@@ -34,7 +34,7 @@ function LocalStorageManager()
 
 LocalStorageManager.prototype.localStorageSupported = function () 
 {
-	var testKey = "test";
+	var testKey = "4815162342";
 	var storage = window.localStorage;
   
 	try 
