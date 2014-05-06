@@ -145,6 +145,8 @@
 		function ValidWord(word)
 		{
 			var lower = GetCleanLowerWord(word);
+			if (!lower || lower.length == 0)
+				return true;
 			return lower == "i" || lower == "a" || Word_List.isInList(lower) || specialAcceptedWords.indexOf(lower) > -1; //checkDictionary(splitWords[i]);
 		}
 
@@ -158,7 +160,7 @@
 				return lower;
 			}
 
-			var endingsToTry = ["", "s", "es", "ies+y", "y", "ly", "y+e", "ness", "er", "ed", "ing", "d", "ed"];
+			var endingsToTry = ["", "s", "es", "ies+y", "y", "ly", "y+e", "ness", "er", "ed", "ing", "d", "ed", "ful"];
 			for(var i = 0; i < endingsToTry.length; ++i)
 			{
 				var parts = endingsToTry[i].split("+");
@@ -319,7 +321,7 @@
 				while (formDiv.lastChild)
 					formDiv.removeChild(formDiv.lastChild);
 
-			var splitWords = inputbox.value.replace(/["'\n]/g, "").split(" ");
+			var splitWords = inputbox.value.replace(/[\n]/g, " ").split(" ");
 			addoutputwordstocontainer(splitWords, outputDiv, formDiv, inputbox);
 		}
 
