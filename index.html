@@ -40,9 +40,12 @@
 			allwordsdiv.innerHTML += ThousandWords[i] + ", ";
 		}
 
-		function RefreshAllOutput()
+		function RefreshAreaOutput(parentObj)
 		{
-			inputchanged(document.getElementById('inputtextbox'), document.getElementById('outputdiv'), document.getElementById('addwordsdiv'));
+			if (parentObj)
+				inputchanged(parentObj.input, parentObj.output, parentObj.translationArea);
+			else
+				inputchanged(document.getElementById('inputtextbox'), document.getElementById('outputdiv'), document.getElementById('addwordsdiv'));
 		}
 
 		function GetTranslation(complexword)
@@ -161,15 +164,15 @@
 			return false;
 		}
 
-		function CreateTranslationEventListener(formDiv, word, translation)
+		function CreateTranslationEventListener(formDiv, word, translation, parentObj)
 		{
 			return function (e)
 			{
-				AddTranslationForm(formDiv, word, translation);
+				AddTranslationForm(formDiv, word, translation, parentObj);
 			}
 		}
 
-		function addoutputwordstocontainer(outputwords, outputDiv, formDiv)
+		function addoutputwordstocontainer(outputwords, outputDiv, formDiv, inputbox)
 		{
 			for (var i = 0; i < outputwords.length; ++i)
 			{
@@ -201,7 +204,7 @@
 								translationGroup.classList.add("translatedgroup");
 								translationGroup.setAttribute("translated", current);
 								inner.appendChild(translationGroup);
-								addoutputwordstocontainer(splitTranslation, translationGroup, formDiv);
+								addoutputwordstocontainer(splitTranslation, translationGroup, formDiv, inputbox);
 							}
 							else
 							{
@@ -209,7 +212,8 @@
 								inner.innerHTML += current;
 							}
 
-							inner.addEventListener('click', CreateTranslationEventListener(formDiv, current, translation), false);
+							var parentObj = { input: inputbox, output: outputDiv, translationArea: formDiv };
+							inner.addEventListener('click', CreateTranslationEventListener(formDiv, current, translation, parentObj), false);
 
 							//if (formDiv)
 							//	AddTranslationForm(formDiv, current, translation);
@@ -229,6 +233,7 @@
 		{
 			if (GetTranslation(translatingword))
 				ForgetTranslation(translatingword);
+			
 			// clear output div
 			while(outputDiv.lastChild)
 				outputDiv.removeChild(outputDiv.lastChild);
@@ -239,10 +244,10 @@
 					formDiv.removeChild(formDiv.lastChild);
 
 			var splitWords = inputbox.value.split(" ");
-			addoutputwordstocontainer(splitWords, outputDiv, formDiv);
+			addoutputwordstocontainer(splitWords, outputDiv, formDiv, inputbox);
 		}
 
-		function AddTranslationForm(outputDiv, complexword, translation)
+		function AddTranslationForm(outputDiv, complexword, translation, parentObj)
 		{
 			while (outputDiv.lastChild)
 				outputDiv.removeChild(outputDiv.lastChild);
@@ -250,8 +255,8 @@
 			var inner = document.createElement("div");
 			
 			// the output area
-			var ouputElem = document.createElement("div");
-			ouputElem.classList.add("output");
+			var outputElem = document.createElement("div");
+			outputElem.classList.add("output");
 
 			// the sub forms area
 			var formsElem = document.createElement("div");
@@ -260,17 +265,17 @@
 			// the input box
 			var input = document.createElement("textarea");
 			input.classList.add("inputtextbox");
-			input.addEventListener('input', function (e) { inputchanged(input, ouputElem, formsElem, complexword); }, false);
+			input.addEventListener('input', function (e) { inputchanged(input, outputElem, formsElem, complexword); }, false);
 			input.value = translation;
 
 			// the update button
 			var updateButton = document.createElement("BUTTON");
 			var txt = document.createTextNode("Update " + complexword + " translation");
 			updateButton.appendChild(txt);
-			updateButton.addEventListener('click', function (e) { var accepted = SetTranslation(complexword, input.value); if (accepted) RefreshAllOutput(); }, false);
+			updateButton.addEventListener('click', function (e) { var accepted = SetTranslation(complexword, input.value); if (accepted) RefreshAreaOutput(parentObj); }, false);
 
 			// trigger initial
-			inputchanged(input, ouputElem, formsElem, complexword);
+			inputchanged(input, outputElem, formsElem, complexword);
 
 			inner.appendChild(document.createTextNode("Translation for word: " + complexword));
 			inner.appendChild(document.createElement("br"));
@@ -278,7 +283,7 @@
 			inner.appendChild(document.createElement("br"));
 			inner.appendChild(updateButton);
 			inner.appendChild(document.createElement("br"));
-			inner.appendChild(ouputElem);
+			inner.appendChild(outputElem);
 			inner.appendChild(document.createElement("br"));
 			inner.appendChild(formsElem);
 			inner.appendChild(document.createElement("br"));
