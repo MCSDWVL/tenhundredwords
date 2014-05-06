@@ -37,3 +37,9 @@ div
 	color:Gray;
 	text-decoration: underline;
 }
+
+#inputtextbox
+{
+	width:50%;
+	height: 500px;
+}

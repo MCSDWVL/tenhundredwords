@@ -27,11 +27,14 @@
 		window.translations = {};
 		window.LocalStorage = new LocalStorageManager();
 		document.getElementById('inputtextbox').addEventListener('input', function (e) { inputchanged(document.getElementById('inputtextbox'), document.getElementById('outputdiv'), document.getElementById('addwordsdiv')); }, false);
+		document.getElementById('inputtextbox').value = "Enter some text here then click on the underlined parts to translate them";
+		RefreshAreaOutput();
 
 		var allwordsdiv = document.getElementById('thousandwords');
 		var lastFirstLetter = '';
 		for (var i = 0; i < ThousandWords.length; ++i)
 		{
+			ThousandWords[i] = ThousandWords[i].toLowerCase();
 			if (lastFirstLetter != ThousandWords[i][0])
 			{
 				allwordsdiv.innerHTML += "<br/><br/>";
@@ -155,6 +158,14 @@
 
 			// verbified to end in ing?
 			cleanString = lower.replace(/ing\b/g, "");
+			if (ThousandWords.indexOf(cleanString) > -1)
+				return true;
+
+			// verbified to end in d or ed?
+			cleanString = lower.replace(/d\b/g, "");
+			if (ThousandWords.indexOf(cleanString) > -1)
+				return true;
+			cleanString = lower.replace(/ed\b/g, "");
 			if (ThousandWords.indexOf(cleanString) > -1)
 				return true;
 			
