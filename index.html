@@ -79,10 +79,8 @@
 
 			for (var i = 0; i < splitWords.length; ++i)
 			{
-				alert("doing " + splitWords[i]);
 				if (!SimpleWord(splitWords[i]))
 				{
-					alert(splitWords[i] + " not simple");
 					// check for a translation
 					// add translated words into the split words here
 					// if we get back to the original complex word, abort!
@@ -94,7 +92,6 @@
 					var translation = GetTranslation(splitWords[i]);
 					if (translation)
 					{
-						alert("translating!");
 						splitWords = splitWords.slice(0, i).concat(translation.split(" ")).concat(splitWords.slice(i+1));
 
 						// repeat position we just spliced into

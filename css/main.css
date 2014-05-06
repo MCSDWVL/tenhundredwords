@@ -32,8 +32,8 @@ div
 	text-decoration: underline;
 }
 
-.translatedgroup.complexword
+.translatedgroup .complexword
 {
-	color:Lime;
+	color:Gray;
 	text-decoration: underline;
 }
