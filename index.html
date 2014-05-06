@@ -319,7 +319,7 @@
 				while (formDiv.lastChild)
 					formDiv.removeChild(formDiv.lastChild);
 
-			var splitWords = inputbox.value.split(" ");
+			var splitWords = inputbox.value.replace(/["'\n]/g, "").split(" ");
 			addoutputwordstocontainer(splitWords, outputDiv, formDiv, inputbox);
 		}
 
